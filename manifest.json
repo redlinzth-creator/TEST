@@ -1,0 +1,14 @@
+{
+  "name": "Simultaneous Clash & Frame Timeline",
+  "version": "1.0.0",
+  "manifest_version": 1,
+  "author": "Custom TRPG",
+  "description": "ระบบแอบเลือกท่า คำนวณ Frame Timeline และปะทะ Clash แบบเรียลไทม์",
+  "action": {
+    "title": "Clash Timeline",
+    "icon": "icon.svg",
+    "popover": "index.html",
+    "height": 640,
+    "width": 440
+  }
+}
