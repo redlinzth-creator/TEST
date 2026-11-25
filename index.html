@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simultaneous Clash</title>
+  <style>
+    :root {
+      --bg: #14151a;
+      --panel: #1e2029;
+      --border: #313444;
+      --text: #e8eaed;
+      --muted: #9aa0a6;
+      --accent: #ff4655;
+      --blue: #3b82f6;
+      --green: #10b981;
+      --gold: #f59e0b;
+    }
+
+    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+    body {
+      margin: 0; padding: 12px;
+      background: var(--bg); color: var(--text);
+      font-size: 13px; overflow-x: hidden;
+    }
+
+    /* เอฟเฟกต์เขย่าหน้าจอตอนปะทะ */
+    @keyframes shake {
+      0%, 100% { transform: translate(0, 0); }
+      20% { transform: translate(-6px, 3px); }
+      40% { transform: translate(6px, -3px); }
+      60% { transform: translate(-4px, -2px); }
+      80% { transform: translate(4px, 2px); }
+    }
+    .shake { animation: shake 0.35s ease-in-out; }
+
+    .header {
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--panel); padding: 10px 12px; border-radius: 8px;
+      border: 1px solid var(--border); margin-bottom: 10px;
+    }
+    .badge {
+      padding: 2px 8px; border-radius: 12px; font-weight: bold; font-size: 11px;
+      background: #2b2e3b; color: var(--gold);
+    }
+    .badge.ready { background: rgba(16, 185, 129, 0.2); color: var(--green); }
+
+    .card {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px; margin-bottom: 10px;
+    }
+    .card-title {
+      font-weight: bold; color: var(--muted); font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
+      display: flex; justify-content: space-between;
+    }
+
+    .row { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
+    label { font-size: 12px; color: var(--muted); }
+    input, select {
+      background: #121318; border: 1px solid var(--border); color: var(--text);
+      padding: 6px 8px; border-radius: 6px; font-size: 12px; width: 100%;
+    }
+    .stat-box { flex: 1; }
+    .stat-box input { text-align: center; font-weight: bold; }
+
+    /* ปุ่มเลือกท่า */
+    .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
+    .action-btn {
+      background: #252836; border: 2px solid transparent; border-radius: 8px;
+      padding: 8px; color: var(--text); cursor: pointer; text-align: left;
+      transition: 0.15s;
+    }
+    .action-btn:hover { background: #2d3142; }
+    .action-btn.selected { border-color: var(--accent); background: rgba(255, 70, 85, 0.15); }
+    .action-name { font-weight: bold; font-size: 13px; display: block; }
+    .action-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* ปุ่มหลัก */
+    .btn {
+      width: 100%; padding: 9px; border: none; border-radius: 6px;
+      font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.15s;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { filter: brightness(1.1); }
+    .btn-gm { background: var(--gold); color: #111; margin-top: 6px; }
+    .btn-secondary { background: #2b2e3b; color: var(--text); margin-top: 6px; }
+
+    /* รายชื่อสถานะคนในห้อง */
+    .roster-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 5px 8px; background: #161820; border-radius: 6px; margin-bottom: 4px;
+    }
+    .fa-tag { font-size: 11px; font-weight: bold; padding: 1px 6px; border-radius: 4px; }
+    .fa-pos { background: rgba(16, 185, 129, 0.2); color: var(--green); }
+    .fa-neg { background: rgba(255, 70, 85, 0.2); color: var(--accent); }
+    .fa-zero { background: #2b2e3b; color: var(--muted); }
+
+    /* แถบ Frame Timeline */
+    .timeline-track {
+      display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px;
+      margin: 8px 0 12px; text-align: center;
+    }
+    .frame-col {
+      background: #121318; border: 1px solid var(--border); border-radius: 4px;
+      padding: 4px 2px; min-height: 54px; display: flex; flex-direction: column; align-items: center;
+    }
+    .frame-num { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+    .frame-chip {
+      font-size: 10px; font-weight: bold; padding: 2px 3px; border-radius: 3px;
+      margin-bottom: 2px; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .chip-atk { background: var(--accent); color: #fff; }
+    .chip-def { background: var(--blue); color: #fff; }
+    .chip-evd { background: var(--green); color: #111; }
+
+    /* กล่องปะทะ Clash */
+    .clash-box {
+      background: linear-gradient(135deg, #2a1419, #1b1d28);
+      border: 1px solid var(--accent); border-radius: 8px; padding: 10px; margin-bottom: 8px;
+    }
+    .clash-title { text-align: center; font-weight: bold; color: var(--gold); margin-bottom: 6px; }
+    .clash-vs { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; }
+    .tug-bar {
+      height: 12px; background: var(--blue); border-radius: 6px; overflow: hidden; display: flex;
+    }
+    .tug-left { background: var(--accent); height: 100%; transition: width 0.5s ease; }
+
+    .log-item {
+      padding: 6px 8px; border-left: 3px solid var(--border);
+      background: #161820; margin-bottom: 5px; border-radius: 0 4px 4px 0; font-size: 12px;
+    }
+    .log-clash { border-left-color: var(--gold); }
+    .log-counter { border-left-color: var(--accent); }
+    .log-guard { border-left-color: var(--blue); }
+    .log-evade { border-left-color: var(--green); }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <strong id="round-label">ROUND 1</strong>
+      <div style="font-size:11px; color:var(--muted);" id="mode-label">Connecting...</div>
+    </div>
+    <span class="badge" id="phase-badge">PLANNING</span>
+  </div>
+
+  <!-- โซนเลือกตัวละครที่กำลังควบคุม (GM สลับคุม NPC/Boss ได้) -->
+  <div class="card" id="planning-panel">
+    <div class="card-title">
+      <span>1. ตัวละคร & ค่าสถานะ</span>
+      <span id="role-badge">PLAYER</span>
+    </div>
+
+    <div class="row">
+      <div style="flex:2;">
+        <label>ตัวละครที่สั่งการ</label>
+        <select id="actor-select"></select>
+      </div>
+      <div class="stat-box">
+        <label>SPD</label>
+        <input type="number" id="input-spd" value="0" />
+      </div>
+      <div class="stat-box">
+        <label>POW Mod</label>
+        <input type="number" id="input-stat" value="0" />
+      </div>
+      <div class="stat-box">
+        <label>FA</label>
+        <input type="number" id="input-fa" value="0" />
+      </div>
+    </div>
+
+    <!-- ปุ่มเพิ่มบอส/NPC สำหรับ GM -->
+    <div class="row hidden" id="gm-add-row">
+      <input type="text" id="new-npc-name" placeholder="ชื่อศัตรู / บอส (เช่น บอสหุ่นยนต์)" />
+      <button class="btn btn-secondary" id="btn-add-npc" style="width:auto; margin:0; padding:6px 10px;">+ เพิ่ม</button>
+    </div>
+
+    <div class="row">
+      <div style="flex:1;">
+        <label>เป้าหมาย (Target)</label>
+        <select id="target-select"></select>
+      </div>
+    </div>
+
+    <div class="card-title" style="margin-top:8px;">2. เลือกแอ็กชัน (แอบซ่อนไว้จนกว่าจะเปิดไพ่)</div>
+    <div class="action-grid" id="action-grid"></div>
+
+    <button class="btn btn-primary" id="btn-lock">🔒 LOCK-IN ACTION</button>
+  </div>
+
+  <!-- สถานะการ Lock-in ของทุกคนในห้อง -->
+  <div class="card" id="roster-panel">
+    <div class="card-title">
+      <span>สถานะในห้อง</span>
+      <span id="ready-count">0/0 Ready</span>
+    </div>
+    <div id="roster-list"></div>
+
+    <div id="gm-controls" class="hidden">
+      <button class="btn btn-gm" id="btn-resolve">▶️ RESOLVE TURN (เปิดไพ่ & ปะทะ!)</button>
+    </div>
+  </div>
+
+  <!-- หน้าจอแสดงผล Timeline & Clash (โผล่ตอนเฟส REVEAL) -->
+  <div class="card hidden" id="reveal-panel">
+    <div class="card-title">
+      <span>FRAME TIMELINE (F1 - F10)</span>
+      <span>⚡ ยิ่งน้อยยิ่งออกไว</span>
+    </div>
+    <div class="timeline-track" id="timeline-track"></div>
+
+    <div id="clash-container"></div>
+    <div id="log-container"></div>
+
+    <div id="gm-next-controls" class="hidden">
+      <button class="btn btn-gm" id="btn-next-round">⏭️ เริ่มรอบถัดไป (นำค่า FA ไปใช้ต่อ)</button>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
